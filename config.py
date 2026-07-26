@@ -1,4 +1,9 @@
-DATA_PATH = "./netflix_titles.csv"
+from pathlib import Path
+
+PROJECT_DIR = Path(__file__).resolve().parent
+
+DATA_PATH = PROJECT_DIR / "data" / "netflix_titles.csv"
+DB_PATH = PROJECT_DIR / "database" / "product_analytics.db"
 
 RANDOM_SEED = 42
 
