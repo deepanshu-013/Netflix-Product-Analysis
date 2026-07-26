@@ -15,13 +15,14 @@ class Preprocessor:
 
     def load_data(self):
         """Load the CSV into DataFrame."""
-        self.df = pd.read_csv(self.data_path)
+        df = pd.read_csv(self.data_path)
+        return df
 
-    def validate(self):
+    def validate(self, df):
         """Validate the DataFrame and return Validation report in dictionary format."""
         report = {
-            "row_count": self.df.shape[0],
-            "column_count": self.df.shape[1],
+            "row_count": df.shape[0],
+            "column_count": df.shape[1],
             "missing_required_columns": [],
             "missing_values": {},
             "duplicate_show_ids": 0,
@@ -32,10 +33,8 @@ class Preprocessor:
             "is_valid": True
         }
 
-        df = self.df
-
         # Check if any required columns are missing
-        report["missing_required_columns"] = list(set(df.columns) - set(self.required_columns))
+        report["missing_required_columns"] = set(self.required_columns) - set(df.columns)
 
         # If any required columns are missing, set is_valid -> False
         if report["missing_required_columns"]:
@@ -90,24 +89,19 @@ class Preprocessor:
                 ]
                 report["invalid_ratings"] = sorted(invalid_ratings.unique().tolist())
 
-            # Validation flag
-            critical_issues = (
-                report["missing_required_columns"]
-                or report["invalid_durations"] > 0
-                or report["invalid_dates"] > 0
-                or len(report["invalid_ratings"]) > 0
+        # Validation flag
+        fatal_errors = (
+                len(report["missing_required_columns"]) > 0
+        )
 
+        if fatal_errors:
+            raise ValueError(
+                f"Missing required columns: {report['missing_required_columns']}"
             )
-            if critical_issues:
-                report["is_valid"] = False
-
-        self.validation_report = report
         return report
 
-    def clean(self):
+    def clean(self, df):
         """Fix duplicates, nulls, whitespaces, and types in-place."""
-
-        df = self.df
 
         # Strip whitespace from all string columns
         str_cols = df.select_dtypes(include=['object']).columns
@@ -130,7 +124,7 @@ class Preprocessor:
             "director": "Unknown",
             "cast": "Unknown",
             "country": "Unknown",
-            "rating": "UR",
+            "rating": "UR", # Unrated
             "date_added": pd.NaT
         }
         for col, fill_value in text_fill_map.items():
@@ -152,12 +146,9 @@ class Preprocessor:
 
         # Resetting the index after all the changes
         df.reset_index(drop= True, inplace= True)
-        self.df = df
 
-
-    def engineer_features(self):
+    def engineer_features(self, df):
         """Create derived columns in-place for analytic purpose."""
-        df = self.df
         current_year = datetime.now().year
 
         # duration_ minutes column: minutes for movies, NaN for shows
@@ -180,25 +171,11 @@ class Preprocessor:
         # content_age
         if "release_year" in df.columns:
             df["content_age"] = current_year - df["release_year"]
-            df.loc[df["content_age"] > 0, "content_age"] = np.nan
+            df.loc[df["content_age"] < 0, "content_age"] = np.nan
 
         # month_added
         if "date_added" in df.columns:
             df["month_added"] = df["date_added"].dt.month
-
-            def _month_to_season(m):
-                if pd.isna(m):
-                    return np.nan
-                m = int(m)
-                if m in (12, 1, 2):
-                    return "Winter"
-                if m in (3, 4, 5):
-                    return "Spring"
-                if m in (6, 7, 8):
-                    return "Summer"
-                return "Fall"
-
-            df["season_added"] = df["month_added"].apply(_month_to_season)
 
         # country_count
         if "country" in df.columns:
@@ -221,15 +198,14 @@ class Preprocessor:
                 else len([d for d in str(v).split(",") if d.strip()])
             )
 
-        self.df = df
 
     def preprocess(self):
         """Integrates the full pipeline:
             load_data() -> validate() -> clean() -> engineer_features()
-        Return pandas.dataframe.
+        Return pandas.dataframe, validation report
         """
-        self.load_data()
-        self.validate()
-        self.clean()
-        self.engineer_features()
-        return self.df
+        df= self.load_data()
+        report = self.validate(df)
+        self.clean(df)
+        self.engineer_features(df)
+        return df, report
