@@ -10,17 +10,16 @@ class Database:
         self.db_path = db_path
         self.conn = None
 
-    def connect(self):
+    def __connect(self):
         """Establish connection to DuckDB."""
         if self.conn is None:
             self.conn = duckdb.connect(self.db_path)
-        return self.conn
 
-    def create_tables(self, df: pd.DataFrame):
+    def __create_tables(self, df: pd.DataFrame):
         """Creates the "titles" table in DuckDB as per the DataFrame schema.
         Drops the table first to ensure idempotency."""
         if not self.conn:
-            self.connect()
+            self.__connect()
 
         # Using DataFrame schema to dynamically create the table.
         # Since Python DataFrame can not be used directly in execute command of DuckDB.
@@ -35,10 +34,10 @@ class Database:
 
         self.conn.unregister('_temp_df')
 
-    def insert_dataframe(self, df: pd.DataFrame):
+    def __insert_dataframe(self, df: pd.DataFrame):
         """Inserts the DataFrame into the database."""
         if not self.conn:
-            self.connect()
+            self.__connect()
 
         # Using the 'register' again to directly execute insertion.
         self.conn.register('_temp_df', df)
@@ -51,14 +50,14 @@ class Database:
         Combines, connect()-> create_tables()-> insert_dataframe() in a single function
         """
         if not self.conn:
-            self.connect()
-        self.create_tables(df)
-        self.insert_dataframe(df)
+            self.__connect()
+        self.__create_tables(df)
+        self.__insert_dataframe(df)
 
     def get_connection(self):
         """Returns the active DuckDB connection for external use (e.g., SQL queries)."""
         if self.conn is None:
-            self.connect()
+            self.__connect()
         return self.conn
 
     def close(self):

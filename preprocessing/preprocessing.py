@@ -13,12 +13,12 @@ class Preprocessor:
         self.random_seed = random_seed
         self.validation_report: dict = {}
 
-    def load_data(self):
+    def __load_data(self):
         """Load the CSV into DataFrame."""
         df = pd.read_csv(self.data_path)
         return df
 
-    def validate(self, df):
+    def __validate(self, df):
         """Validate the DataFrame and return Validation report in dictionary format."""
         report = {
             "row_count": df.shape[0],
@@ -100,7 +100,7 @@ class Preprocessor:
             )
         return report
 
-    def clean(self, df):
+    def __clean(self, df):
         """Fix duplicates, nulls, whitespaces, and types in-place."""
 
         # Strip whitespace from all string columns
@@ -147,7 +147,7 @@ class Preprocessor:
         # Resetting the index after all the changes
         df.reset_index(drop= True, inplace= True)
 
-    def engineer_features(self, df):
+    def __engineer_features(self, df):
         """Create derived columns in-place for analytic purpose."""
         current_year = datetime.now().year
 
@@ -204,8 +204,8 @@ class Preprocessor:
             load_data() -> validate() -> clean() -> engineer_features()
         Return pandas.dataframe, validation report
         """
-        df= self.load_data()
-        report = self.validate(df)
-        self.clean(df)
-        self.engineer_features(df)
+        df= self.__load_data()
+        report = self.__validate(df)
+        self.__clean(df)
+        self.__engineer_features(df)
         return df, report
