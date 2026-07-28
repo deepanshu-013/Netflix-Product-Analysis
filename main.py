@@ -2,6 +2,7 @@ from preprocessing.preprocessing import Preprocessor
 from database.database import Database
 from sql.sql_runner import SQLRunner
 from analytics.content_analysis import ContentAnalysis
+from analytics.country_analysis import CountryAnalysis
 
 p = Preprocessor()
 df, report = p.preprocess()
@@ -14,7 +15,7 @@ db.load_database(df)
 print("Data inserted into 'titles' table.")
 
 # print("Testing SQLRunner...")
-print("Running Content Analysis...")
+# print("Running Content Analysis...")
 conn = db.get_connection()
 runner = SQLRunner(connection=conn)
 
@@ -31,25 +32,37 @@ runner = SQLRunner(connection=conn)
 # db.close()
 # print("\nPipeline finished successfully.")
 
-analyzer = ContentAnalysis(runner=runner)
+# analyzer = ContentAnalysis(runner=runner)
+#
+# # Total titles
+# total = analyzer.total_titles()
+# print(f"Total titles: {total}")
+#
+# # Movies vs TV Shows
+# dist_df = analyzer.content_type_distribution()
+# print("\nMovies vs TV Shows:")
+# print(dist_df.to_string(index=False))
+#
+# # Average movie duration
+# avg_dur = analyzer.average_movie_duration()
+# print(f"\nAverage Movie Duration: {avg_dur} minutes")
+#
+# # Content added per year (showing last 5 years)
+# yearly_df = analyzer.content_added_per_year()
+# print("\nContent added per year (Recent 5 years):")
+# print(yearly_df.tail(5).to_string(index=False))
 
-# Total titles
-total = analyzer.total_titles()
-print(f"Total titles: {total}")
+# Test Country Analytics
+country_analytics = CountryAnalysis(runner=runner)
+print("\n--- Country Analysis ---")
+print(f"Total unique countries: {country_analytics.total_countries()}")
+print(f"Avg countries per title: {country_analytics.average_countries_per_title()}")
 
-# Movies vs TV Shows
-dist_df = analyzer.content_type_distribution()
-print("\nMovies vs TV Shows:")
-print(dist_df.to_string(index=False))
+print("\nTop 5 Countries:")
+print(country_analytics.top_countries(limit=5).to_string(index=False))
 
-# Average movie duration
-avg_dur = analyzer.average_movie_duration()
-print(f"\nAverage Movie Duration: {avg_dur} minutes")
-
-# Content added per year (showing last 5 years)
-yearly_df = analyzer.content_added_per_year()
-print("\nContent added per year (Recent 5 years):")
-print(yearly_df.tail(5).to_string(index=False))
+print("\nSingle vs Multi Country Production:")
+print(country_analytics.single_country_vs_multi_country().to_string(index=False))
 
 # Close connection
 db.close()
