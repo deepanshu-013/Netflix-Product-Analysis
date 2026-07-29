@@ -1,69 +1,56 @@
 from preprocessing.preprocessing import Preprocessor
 from database.database import Database
 from sql.sql_runner import SQLRunner
-from analytics.content_analysis import ContentAnalysis
-from analytics.country_analysis import CountryAnalysis
+from analytics.rating_analysis import RatingAnalysis
+from analytics.release_analysis import ReleaseAnalysis
 
-p = Preprocessor()
-df, report = p.preprocess()
-print(f"Cleaned Dataset Shape: {df.shape}")
-print(f"Fatal Errors: {report.get('fatal_errors', 'None')}")
+def main():
+    print("=" * 60)
+    print("Product Analytics — Netflix Titles Pipeline")
+    print("=" * 60)
+
+    # 1. Preprocess
+    print("\n[1] Running Preprocessor...")
+    preprocessor = Preprocessor()
+    df, report = preprocessor.preprocess()
+    print(f"Cleaned Dataset Shape: {df.shape}")
+
+    # 2. Database Ingestion
+    print("\n[2] Loading data into DuckDB...")
+    db = Database()
+    db.load_database(df)
+    print("Data inserted into 'titles' table.")
+
+    # 3. Analytics Execution
+    print("\n[3] Running Analytics Modules...")
+    conn = db.get_connection()
+    runner = SQLRunner(connection=conn)
+
+    # Test Rating Analytics
+    rating_analytics = RatingAnalysis(runner=runner)
+    print("\n--- Rating Analysis ---")
+
+    print("\n Kids vs Adults Distribution:")
+    print(rating_analytics.kids_vs_adults().to_string(index=False))
+
+    # Test Release Analytics
+    release_analytics = ReleaseAnalysis(runner=runner)
+    print("\n--- Release Analysis ---")
+
+    print(f"Oldest decade: {release_analytics.oldest_decade()}s")
+    print(f"Newest decade: {release_analytics.newest_decade()}s")
+
+    print("\nTitles per decade (Recent 5):")
+    print(release_analytics.titles_per_decade().tail(5).to_string(index=False))
+
+    print("\nContent Age Distribution:")
+    print(release_analytics.content_age_distribution().to_string(index=False))
+
+    # 4. Close connection
+    db.close()
+    print("\n" + "=" * 60)
+    print("Pipeline finished successfully.")
 
 
-db = Database()
-db.load_database(df)
-print("Data inserted into 'titles' table.")
-
-# print("Testing SQLRunner...")
-# print("Running Content Analysis...")
-conn = db.get_connection()
-runner = SQLRunner(connection=conn)
-
-# # Fetch scalar
-# total_titles = runner.fetch_scalar("SELECT COUNT(*) FROM titles")
-# print(f"Total titles via SQLRunner: {total_titles}")
-#
-# # Fetch dataframe
-# sample_df = runner.fetch_dataframe("SELECT type, COUNT(*) as count FROM titles GROUP BY type")
-# print("Content type distribution:")
-# print(sample_df.to_string(index=False))
-#
-# # 4. Close connection
-# db.close()
-# print("\nPipeline finished successfully.")
-
-# analyzer = ContentAnalysis(runner=runner)
-#
-# # Total titles
-# total = analyzer.total_titles()
-# print(f"Total titles: {total}")
-#
-# # Movies vs TV Shows
-# dist_df = analyzer.content_type_distribution()
-# print("\nMovies vs TV Shows:")
-# print(dist_df.to_string(index=False))
-#
-# # Average movie duration
-# avg_dur = analyzer.average_movie_duration()
-# print(f"\nAverage Movie Duration: {avg_dur} minutes")
-#
-# # Content added per year (showing last 5 years)
-# yearly_df = analyzer.content_added_per_year()
-# print("\nContent added per year (Recent 5 years):")
-# print(yearly_df.tail(5).to_string(index=False))
-
-# Test Country Analytics
-country_analytics = CountryAnalysis(runner=runner)
-print("\n--- Country Analysis ---")
-print(f"Total unique countries: {country_analytics.total_countries()}")
-print(f"Avg countries per title: {country_analytics.average_countries_per_title()}")
-
-print("\nTop 5 Countries:")
-print(country_analytics.top_countries(limit=5).to_string(index=False))
-
-print("\nSingle vs Multi Country Production:")
-print(country_analytics.single_country_vs_multi_country().to_string(index=False))
-
-# Close connection
-db.close()
-print("\nPipeline finished successfully.")
+if __name__ == "__main__":
+    main()
