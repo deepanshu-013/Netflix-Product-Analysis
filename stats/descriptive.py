@@ -3,7 +3,7 @@ from typing import Union, List
 
 class DescriptiveStats:
     """
-    Computes the descriptive statistics for a given pandas Series/DataFrame.
+    Computes the descriptive stats for a given pandas Series/DataFrame.
     """
 
     def __init__(self, data: pd.Series):
@@ -61,7 +61,7 @@ class DescriptiveStats:
         return q3 - q1
 
     def summary(self) -> dict:
-        """Returns a dictionary of all descriptive statistics."""
+        """Returns a dictionary of all descriptive stats."""
         return {
             "mean": self.mean(),
             "median": self.median(),

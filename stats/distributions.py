@@ -2,7 +2,7 @@ import pandas as pd
 
 class DistributionStats:
     """
-    Computes distribution statistics for a given pandas Series.
+    Computes distribution stats for a given pandas Series.
     Architecture: Receives data from the Analytics layer.
     """
 
