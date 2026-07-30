@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from typing import Tuple
 from scipy import stats
-from statistics.descriptive import DescriptiveStats
+from stats.descriptive import DescriptiveStats
 
 
 class InferenceStats:

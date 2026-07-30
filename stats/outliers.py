@@ -1,5 +1,5 @@
 import pandas as pd
-from statistics.descriptive import DescriptiveStats
+from stats.descriptive import DescriptiveStats
 
 class OutlierStats:
     """
