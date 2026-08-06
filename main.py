@@ -2,6 +2,10 @@ from preprocessing.preprocessing import Preprocessor
 from database.database import Database
 from sql.sql_runner import SQLRunner
 from stats.inference import InferenceStats
+from business.executive_dashboard import ExecutiveDashboard
+from business.content_strategy import ContentStrategy
+import json
+
 
 def main():
     print("=" * 60)
@@ -61,7 +65,27 @@ def main():
     else:
         print("Result: No significant difference in release years (Fail to Reject Null Hypothesis)")
 
-    # 4. Close connection
+    # 4. Business Layer Execution
+    print("\n[3] Running Business Layer...")
+    # Executive Dashboard
+    dashboard = ExecutiveDashboard(runner=runner)
+    summary = dashboard.summary()
+
+    print("\n--- Executive Summary ---")
+    # Pretty print the JSON dictionary
+    print(json.dumps(summary, indent=4))
+
+    # Content Strategy
+    strategy = ContentStrategy(runner=runner)
+
+    print("\n--- Content Strategy Recommendations ---")
+    expand = strategy.best_genres_to_expand()
+    print(f"Expand: {expand}")
+
+    decline = strategy.genre_decline()
+    print(f"Decline: {decline}")
+
+    # 5. Close connection
     db.close()
     print("\n" + "=" * 60)
     print("Pipeline finished successfully.")
